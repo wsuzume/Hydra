@@ -375,6 +375,11 @@ TriUnit freeTriUnit(TriUnit tu)
 }
 
 
+static inline int compTriUnit(TriUnit t, TriUnit u)
+{
+    return compAtom(t->atom, u->atom);
+}
+
 void printTriUnit(TriUnit t)
 {
     putchar('$');
@@ -398,9 +403,31 @@ HydraGraph makeHydraGraph(Atom atom)
 
 HydraGraph addVertex(HydraGraph hg, TriUnit t)
 {
-    printAtom(hg->atom);
-    printTriUnit(t);
-    putchar('\n');
+    List list = hg->vertex;
+    if (list->cdr == nil) {
+        cons(t, list);
+        return hg;
+    }
+
+    List pre = list;
+    List cur = (List)list->cdr;
+    int comp;
+    while (cur != NULL) {
+        comp = compTriUnit((TriUnit)cur->car, t);
+        if (comp == -1) {
+            cons(t, pre);
+            return hg;
+        } else if (comp == 0) {
+            perror("Error at addVertex(): you can't add a vertex with the same HID.");
+            return hg;
+        }
+
+        pre = cur;
+        cur = (List)cur->cdr;
+    }
+
+    pre->cdr = (uintptr_t)makePair((uintptr_t)t, nil);
+
     return hg;
 }
 
@@ -413,7 +440,32 @@ void freeHydraGraph(HydraGraph hg)
 void printHydraGraph(HydraGraph hg)
 {
     printAtom(hg->atom);
+    putchar('\n');
+    List list = hg->vertex;
+    List buf = (List)list->cdr;
+    while (buf != NULL) {
+        printTriUnit((TriUnit)buf->car);
+        putchar('\n');
+        buf = (List)buf->cdr;
+    }
     return;
+}
+
+
+TriUnit searchHydraGraph(HydraGraph hg, Atom atom)
+{
+    List cur = hg->vertex;
+    if (cur->cdr == nil) return NULL;
+
+    cur = (List)cur->cdr;
+    while (cur != NULL) {
+        if (compAtom(atom, ((TriUnit)cur->car)->atom) == 0) {
+            return (TriUnit)cur->car;
+        }
+        cur = (List)cur->cdr;
+    }
+
+    return NULL;
 }
 
 int main(void)
@@ -444,8 +496,59 @@ int main(void)
 
     HydraGraph hg = makeHydraGraph(makeAtomHID(makeHID(INF, INF)));
     TriUnit t1 = makeTriUnit(makeAtomHID(makeHID(48,65)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit t2 = makeTriUnit(makeAtomHID(makeHID(INF,INF)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit t3 = makeTriUnit(makeAtomHID(makeHID(48,65)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit t4 = makeTriUnit(makeAtomHID(makeHID(-32,3)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit t5 = makeTriUnit(makeAtomHID(makeHID(23,0)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit t6 = makeTriUnit(makeAtomHID(makeHID(1,8)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit t7 = makeTriUnit(makeAtomHID(makeHID(-1,4)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit t8 = makeTriUnit(makeAtomHID(makeHID(23,8)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
     addVertex(hg, t1);
+    addVertex(hg, t2);
+    addVertex(hg, t3);
+    addVertex(hg, t4);
+    addVertex(hg, t5);
+    addVertex(hg, t6);
+    addVertex(hg, t7);
+    addVertex(hg, t8);
 
+    printHydraGraph(hg);
+
+    Atom key1 = makeAtomHID(makeHID(41, 90));
+    Atom key2 = makeAtomHID(makeHID(1, 8));
+
+    TriUnit tribuf = searchHydraGraph(hg, key1);
+    if (tribuf == NULL) {
+        printf("No such node ");
+        printAtom(key1);
+        putchar('\n');
+    } else {
+        printf("Node detected ");
+        printTriUnit(tribuf);
+        putchar('\n');
+    }
+
+    tribuf = searchHydraGraph(hg, key2);
+    if (tribuf == NULL) {
+        printf("No such node ");
+        printAtom(key2);
+        putchar('\n');
+    } else {
+        printf("Node detected ");
+        printTriUnit(tribuf);
+        putchar('\n');
+    }
+
+    freeAtom(key2);
+    freeAtom(key1);
+
+    freeTriUnit(t8);
+    freeTriUnit(t7);
+    freeTriUnit(t6);
+    freeTriUnit(t5);
+    freeTriUnit(t4);
+    freeTriUnit(t3);
+    freeTriUnit(t2);
     freeTriUnit(t1);
     freeHydraGraph(hg);
 
