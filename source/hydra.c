@@ -1,21 +1,41 @@
-#include <stdio.h>
-#include <stdint.h>
-//#include "hydra.h"
+#include "hydra.h"
 
 
-enum HTYPE {
-    NIL,
-    HID,
-};
+static inline hid_t *makeLink(hid_t *w, hid_t x, hid_t y)
+{
+    w[0] = x;
+    w[1] = y;
+    return w;
+}
 
-typedef int64_t hid_t;
-typedef int32_t hhid_t;
+static inline hid_t upsLink(hid_t *w)
+{
+    return w[0];
+}
 
-#define INF INT32_MIN
+static inline hid_t dwsLink(hid_t *w)
+{
+    return w[1];
+}
+
+//大きいほうを返す。-1なら左のv, 1なら右のwが大きい。
+static inline int compLink(hid_t *v, hid_t *w)
+{
+    return (v[0] < w[0] ?  1 :
+           (v[0] > w[0] ? -1 :
+           (v[1] < w[1] ?  1 :
+           (v[1] > w[1] ? -1 : 0))));
+}
 
 static inline hid_t makeHID(int32_t x, int32_t y)
 {
     return (((int64_t)x) << 32) | (int64_t)(y & 0xffffffff);
+}
+
+static inline int compHID(hid_t v, hid_t w)
+{
+    return (v < w ?  1 :
+           (v > w ? -1 : 0));
 }
 
 static inline hhid_t getxHID(hid_t hid)
@@ -74,10 +94,9 @@ hid_t view(hid_t v, hid_t hid)
 
     return hid;
 }
-
+/*
 int main(void)
 {
-    /*
     printHID(makeHID(3, 5));
     putchar('\n');
     printHID(makeHID(-2, 1));
@@ -110,7 +129,6 @@ int main(void)
     putchar('\n');
     printHID(makeHID(INF, INF));
     putchar('\n');
-    */
 
     printHID(view(makeHID(15, 31), makeHID(INF, INF)));
     putchar('\n');
@@ -134,4 +152,305 @@ int main(void)
     putchar('\n');
     printHID(view(makeHID(15, 31), makeHID(-5, INF)));
     putchar('\n');
+
+    dhid_t v, w;
+    makeLink(v, makeHID(6,5), makeHID(4, 8));
+    makeLink(w, makeHID(3,5), makeHID(4, 8));
+    printHID(upsLink(w));
+    printHID(dwsLink(w));
+    putchar('\n');
+    printf("%d\n", makeHID(3,5) < makeHID(4,8) ? 1 : 0);
+    printf("%d\n", compLink(v, w));
+}
+*/
+
+ByteString makeByteString(char *str)
+{
+    ByteString ret = (ByteString)malloc(sizeof(struct bytestring_t));
+    ret->size = strlen(str) + 1;
+    ret->data = str;
+    return ret;
+}
+
+void freeByteString(ByteString str)
+{
+    free(str);
+    return;
+}
+
+void printByteString(ByteString str)
+{
+    fputs(str->data, stdout);
+    return;
+}
+
+
+
+Atom makeAtomHID(hid_t hid)
+{
+    Atom ret = (Atom)malloc(sizeof(struct atom_t));
+    ret->type = HID;
+    ret->data.hid = hid;
+    return ret;
+}
+
+void printAtom(Atom atom)
+{
+    if (atom->type == HID) {
+        printHID(atom->data.hid);
+    }
+    return;
+}
+
+void freeAtom(Atom atom)
+{
+    free(atom);
+    return;
+}
+
+int compAtom(Atom a1, Atom a2)
+{
+    if (a1->type < a2->type) return 1;
+    if (a1->type > a2->type) return -1;
+
+    switch (a1->type) {
+        case INT:
+            if (a1->data.id < a2->data.id) return 1;
+            if (a1->data.id > a2->data.id) return -1;
+            return 0;
+        case HID:
+            return compHID(a1->data.hid, a2->data.hid);
+        default:
+            break;
+    }
+
+    return 0;
+}
+
+
+
+Object makeObject(type_t type, void *data)
+{
+    Object ret = (Object)malloc(sizeof(struct object_t));
+    ret->type = type;
+    ret->data = data;
+    return ret;
+}
+
+Object freeObject(Object obj)
+{
+    if (obj->type == BYTESTRING) {
+        freeByteString((ByteString)obj->data);
+    }
+    free(obj);
+    return;
+}
+
+void printObject(Object obj)
+{
+    if (obj->type == BYTESTRING) {
+        fputs("(ByteString:", stdout);
+        printByteString((ByteString)obj->data);
+        putchar(')');
+    }
+    return;
+}
+
+
+
+
+List makeList(type_t type)
+{
+    List ret = (List)malloc(sizeof(struct pair_t));
+    ret->car = (uintptr_t)type;
+    ret->cdr = nil;
+}
+
+Pair makePair(uintptr_t x, uintptr_t y)
+{
+    Pair ret = (Pair)malloc(sizeof(struct pair_t));
+    ret->car = x;
+    ret->cdr = y;
+    return ret;
+}
+
+List cons(void *x, List xs)
+{
+    xs->cdr = (uintptr_t)makePair((uintptr_t)x, xs->cdr);
+    return xs;
+}
+
+void *head(List xs)
+{
+    if (xs->cdr == nil) return NULL;
+
+    Pair p = (Pair)xs->cdr;
+    void *ret = (void *)p->car;
+    xs->cdr = p->cdr;
+    free(p);
+
+    return ret;
+}
+
+void freeList(List xs)
+{
+    free(xs);
+    return;
+}
+
+TriUnit makeTriUnit(Atom atom, Object obj, Set set)
+{
+    TriUnit ret = (TriUnit)malloc(sizeof(struct triunit_t));
+    ret->atom = atom;
+    ret->obj = obj;
+    ret->set = set;
+    return ret;
+}
+
+TriUnit addTriUnit(TriUnit t, TriUnit u)
+{
+    //未実装
+    return t;
+}
+
+Set makeSet(type_t type)
+{
+    Set ret = (Set)calloc(1, sizeof(struct set_t));
+    ret->type = type;
+    return ret;
+}
+
+Set setinsert(Set s, TriUnit t)
+{
+    Atom atom = t->atom;
+    List list = s->root[atom->type];
+    
+    /*
+    if (target == NULL) list = s->root[atom->type] = makeList(atom->type);
+
+    List xs = list->cdr;
+    if (xs == nil) {
+        list->cdr = (uintptr_t)makePair(t, nil);
+        return s;
+    }
+
+    TriUnit u = xs->car;
+    int comp = compAtom(u->atom, t->atom);
+    if (comp == -1) {
+        //uのほうが大きい
+        cons(t, list);
+        return s;
+    } else if (comp == 0) {
+        xs->car = (uintptr_t)addTriUnit(t, u);
+        return s;
+    }
+
+    while (1) {
+        
+    }
+    */
+    return NULL;
+}
+
+void printSet(Set set)
+{
+    fputs("{SET}", stdout);
+    return;
+}
+
+void freeSet(Set set)
+{
+    free(set);
+    return;
+}
+
+
+TriUnit freeTriUnit(TriUnit tu)
+{
+    freeAtom(tu->atom);
+    freeObject(tu->obj);
+    freeSet(tu->set);
+    free(tu);
+    return;
+}
+
+
+void printTriUnit(TriUnit t)
+{
+    putchar('$');
+    putchar('{');
+    printAtom(t->atom);
+    putchar(',');
+    printObject(t->obj);
+    putchar(',');
+    printSet(t->set);
+    putchar('}');
+    return;
+}
+
+HydraGraph makeHydraGraph(Atom atom)
+{
+    HydraGraph hg = (HydraGraph)malloc(sizeof(struct hydragraph_t));
+    hg->atom = atom;
+    hg->vertex = makeList(TRIUNIT);
+    return hg;
+}
+
+HydraGraph addVertex(HydraGraph hg, TriUnit t)
+{
+    printAtom(hg->atom);
+    printTriUnit(t);
+    putchar('\n');
+    return hg;
+}
+
+void freeHydraGraph(HydraGraph hg)
+{
+    freeAtom(hg->atom);
+    return;
+}
+
+void printHydraGraph(HydraGraph hg)
+{
+    printAtom(hg->atom);
+    return;
+}
+
+int main(void)
+{
+    Atom atom = makeAtomHID(makeHID(INF,INF));
+    printAtom(atom);
+    putchar('\n');
+    
+    Atom atom1 = makeAtomHID(makeHID(4,2));
+    Atom atom2 = makeAtomHID(makeHID(1,3));
+    
+    printf("%d\n", compAtom(atom1, atom2));
+    printAtom(atom1);
+    printAtom(atom2);
+    putchar('\n');
+
+    List list = makeList(ATOM);
+    cons(atom1, cons(atom2, list));
+    printAtom((Atom)head(list));
+    printAtom((Atom)head(list));
+    putchar('\n');
+    freeList(list);
+
+    TriUnit t = makeTriUnit(makeAtomHID(makeHID(98,43)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    printTriUnit(t);
+    putchar('\n');
+    freeTriUnit(t);
+
+    HydraGraph hg = makeHydraGraph(makeAtomHID(makeHID(INF, INF)));
+    TriUnit t1 = makeTriUnit(makeAtomHID(makeHID(48,65)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    addVertex(hg, t1);
+
+    freeTriUnit(t1);
+    freeHydraGraph(hg);
+
+    freeAtom(atom);
+    freeAtom(atom1);
+    freeAtom(atom2);
+    return 0;
 }
