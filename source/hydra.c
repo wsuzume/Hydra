@@ -338,6 +338,21 @@ TriUnit makeTriUnit(Atom atom, Object obj, Set set)
     return ret;
 }
 
+static inline Atom atomof(TriUnit t)
+{
+    return t->atom;
+}
+
+static inline Object bark(TriUnit t)
+{
+    return t->obj;
+}
+
+static inline Set leaf(TriUnit t)
+{
+    return t->set;
+}
+
 TriUnit addTriUnit(TriUnit t, TriUnit u)
 {
     //未実装
@@ -717,7 +732,59 @@ int main(void)
 }
 */
 
+/* test code 3 */
 int main(void)
 {
+    HydraGraph hg = makeHydraGraph(makeAtomHID(makeHID(INF, INF)));
+    TriUnit t1 = makeTriUnit(makeAtomHID(makeHID(48,65)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(TRIUNIT));
+    TriUnit t2 = makeTriUnit(makeAtomHID(makeHID(INF,INF)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(TRIUNIT));
+    TriUnit t3 = makeTriUnit(makeAtomHID(makeHID(79,-54)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(TRIUNIT));
+    TriUnit t4 = makeTriUnit(makeAtomHID(makeHID(-32,3)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(TRIUNIT));
+    TriUnit t5 = makeTriUnit(makeAtomHID(makeHID(23,0)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(TRIUNIT));
+    TriUnit t6 = makeTriUnit(makeAtomHID(makeHID(1,8)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(TRIUNIT));
+    TriUnit t7 = makeTriUnit(makeAtomHID(makeHID(-1,4)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(TRIUNIT));
+    TriUnit t8 = makeTriUnit(makeAtomHID(makeHID(23,8)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(TRIUNIT));
+    addVertex(hg, t1);
+    addVertex(hg, t2);
+    addVertex(hg, t3);
+    addVertex(hg, t4);
+    addVertex(hg, t5);
+    addVertex(hg, t6);
+    addVertex(hg, t7);
+    addVertex(hg, t8);
+
+    printHydraGraph(hg);
+
+    putchar('\n');
+
+    TriUnit u1 = makeTriUnit(makeAtomHID(makeHID(22,33)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(TRIUNIT));
+    TriUnit u2 = makeTriUnit(makeAtomHID(makeHID(INF,INF)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(TRIUNIT));
+    TriUnit u3 = makeTriUnit(makeAtomHID(makeHID(44,55)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(TRIUNIT));
+    setinsert(leaf(t1), u1);
+    setinsert(leaf(t1), u2);
+    setinsert(leaf(t1), u3);
+
+    printTriUnit(t1);
+    putchar('\n');
+    
+    putchar('\n');
+    printHydraGraph(hg);
+    freeTriUnit(u3);
+    freeTriUnit(u2);
+    freeTriUnit(u1);
+
+    freeTriUnit(t8);
+    freeTriUnit(t7);
+    freeTriUnit(t6);
+    freeTriUnit(t5);
+    freeTriUnit(t4);
+    freeTriUnit(t3);
+    freeTriUnit(t2);
+    freeTriUnit(t1);
+    freeHydraGraph(hg);
+
+
+
+
     return EXIT_SUCCESS;
 }
