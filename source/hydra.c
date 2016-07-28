@@ -94,6 +94,8 @@ hid_t view(hid_t v, hid_t hid)
 
     return hid;
 }
+
+/* test code 1 */
 /*
 int main(void)
 {
@@ -184,6 +186,20 @@ void printByteString(ByteString str)
     return;
 }
 
+int compByteString(ByteString a1, ByteString a2)
+{
+    char *s1 = a1->data;
+    char *s2 = a2->data;
+
+    while ((*s1 == *s2) && *s1) {
+        *s1++;
+        *s2++;
+    }
+
+    return (*s1 == *s2) ? 0 :
+           (*s1 < *s2)  ? 1 : -1;
+}
+
 
 
 Atom makeAtomHID(hid_t hid)
@@ -194,16 +210,29 @@ Atom makeAtomHID(hid_t hid)
     return ret;
 }
 
+Atom makeAtomByteString(char *p)
+{
+    Atom ret = (Atom)malloc(sizeof(struct atom_t));
+    ret->type = BYTESTRING;
+    ret->data.name = makeByteString(p);
+    return ret;
+}
+
 void printAtom(Atom atom)
 {
     if (atom->type == HID) {
         printHID(atom->data.hid);
+    } else if (atom->type == BYTESTRING) {
+        printByteString(atom->data.name);
     }
     return;
 }
 
 void freeAtom(Atom atom)
 {
+    if (atom->type == BYTESTRING) {
+        freeByteString(atom->data.name);
+    }
     free(atom);
     return;
 }
@@ -220,6 +249,8 @@ int compAtom(Atom a1, Atom a2)
             return 0;
         case HID:
             return compHID(a1->data.hid, a2->data.hid);
+        case BYTESTRING:
+            return compByteString(a1->data.name, a2->data.name);
         default:
             break;
     }
@@ -320,41 +351,67 @@ Set makeSet(type_t type)
     return ret;
 }
 
+
+static inline int compTriUnit(TriUnit t, TriUnit u);
+void printTriUnit(TriUnit t);
 Set setinsert(Set s, TriUnit t)
 {
     Atom atom = t->atom;
     List list = s->root[atom->type];
     
-    /*
-    if (target == NULL) list = s->root[atom->type] = makeList(atom->type);
+    if (list == NULL) list = s->root[atom->type] = makeList(atom->type);
 
-    List xs = list->cdr;
-    if (xs == nil) {
-        list->cdr = (uintptr_t)makePair(t, nil);
-        return s;
+    List pre = list;
+    List cur = (List)list->cdr;
+    int comp;
+    while (cur != NULL) {
+        comp = compTriUnit((TriUnit)cur->car, t);
+        if (comp == -1) {
+            cons(t, pre);
+            return s;
+        } else if (comp == 0) {
+            perror("Error at addVertex(): you can't add a triunit with the same HID.");
+            return s;
+        }
+
+        pre = cur;
+        cur = (List)cur->cdr;
     }
 
-    TriUnit u = xs->car;
-    int comp = compAtom(u->atom, t->atom);
-    if (comp == -1) {
-        //uのほうが大きい
-        cons(t, list);
-        return s;
-    } else if (comp == 0) {
-        xs->car = (uintptr_t)addTriUnit(t, u);
-        return s;
-    }
+    pre->cdr = (uintptr_t)makePair((uintptr_t)t, nil);
 
-    while (1) {
-        
-    }
-    */
-    return NULL;
+    return s;
 }
+
 
 void printSet(Set set)
 {
-    fputs("{SET}", stdout);
+    if (set->type == TRIUNIT) {
+        putchar('{');
+        int i = 0;
+        List cur;
+        int printflag = 0;
+        for (; i < ATOMTYPENUM; i++) {
+            cur = (List)set->root[i];
+            if (cur == NULL) continue;
+            cur = (List)cur->cdr;
+            if (cur != NULL) {
+                if (i != 0 && printflag) putchar(',');
+                printAtom(((TriUnit)cur->car)->atom);
+                cur = (List)cur->cdr;
+                printflag = 1;
+            }
+            while (cur != NULL) {
+                putchar(',');
+                printAtom(((TriUnit)cur->car)->atom);
+                cur = (List)cur->cdr;
+            }
+        }
+        putchar('}');
+    } else {
+        fputs("{SET}", stdout);
+    }
+
     return;
 }
 
@@ -362,6 +419,22 @@ void freeSet(Set set)
 {
     free(set);
     return;
+}
+
+TriUnit setsearch(Set s, Atom atom)
+{
+    List cur = s->root[atom->type];
+    if (cur->cdr == nil) return NULL;
+
+    cur = (List)cur->cdr;
+    while (cur != NULL) {
+        if (compAtom(atom, ((TriUnit)cur->car)->atom) == 0) {
+            return (TriUnit)cur->car;
+        }
+        cur = (List)cur->cdr;
+    }
+
+    return NULL;
 }
 
 
@@ -468,6 +541,8 @@ TriUnit searchHydraGraph(HydraGraph hg, Atom atom)
     return NULL;
 }
 
+/* test code 2 */
+/*
 int main(void)
 {
     Atom atom = makeAtomHID(makeHID(INF,INF));
@@ -552,8 +627,97 @@ int main(void)
     freeTriUnit(t1);
     freeHydraGraph(hg);
 
+
+    Set s = makeSet(TRIUNIT);
+
+    TriUnit u1 = makeTriUnit(makeAtomByteString("hoge"), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit u2 = makeTriUnit(makeAtomByteString("fuga"), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit u3 = makeTriUnit(makeAtomByteString("piyo"), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit u4 = makeTriUnit(makeAtomHID(makeHID(INF,INF)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit u5 = makeTriUnit(makeAtomHID(makeHID(48,65)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+    TriUnit u6 = makeTriUnit(makeAtomHID(makeHID(-32,3)), makeObject(BYTESTRING, makeByteString("Hello, world!")), makeSet(ATOM));
+
+    Atom name1 = makeAtomHID(makeHID(48,65));
+    Atom name2 = makeAtomHID(makeHID(3,7));
+    Atom name3 = makeAtomByteString("hoge");
+    Atom name4 = makeAtomByteString("poyo");
+
+    setinsert(s, u1);
+    setinsert(s, u2);
+    setinsert(s, u3);
+    setinsert(s, u4);
+    setinsert(s, u5);
+    setinsert(s, u6);
+
+    printSet(s);
+    putchar('\n');
+    
+    tribuf = setsearch(s, name1);
+    if (tribuf == NULL) {
+        printf("No such node ");
+        printAtom(name1);
+        putchar('\n');
+    } else {
+        printf("Node detected ");
+        printTriUnit(tribuf);
+        putchar('\n');
+    }
+
+    tribuf = setsearch(s, name2);
+    if (tribuf == NULL) {
+        printf("No such node ");
+        printAtom(name2);
+        putchar('\n');
+    } else {
+        printf("Node detected ");
+        printTriUnit(tribuf);
+        putchar('\n');
+    }
+    
+    tribuf = setsearch(s, name3);
+    if (tribuf == NULL) {
+        printf("No such node ");
+        printAtom(name3);
+        putchar('\n');
+    } else {
+        printf("Node detected ");
+        printTriUnit(tribuf);
+        putchar('\n');
+    }
+
+    tribuf = setsearch(s, name4);
+    if (tribuf == NULL) {
+        printf("No such node ");
+        printAtom(name4);
+        putchar('\n');
+    } else {
+        printf("Node detected ");
+        printTriUnit(tribuf);
+        putchar('\n');
+    }
+
+    freeAtom(name4);
+    freeAtom(name3);
+    freeAtom(name2);
+    freeAtom(name1);
+
+    freeTriUnit(u6);
+    freeTriUnit(u5);
+    freeTriUnit(u4);
+    freeTriUnit(u3);
+    freeTriUnit(u2);
+    freeTriUnit(u1);
+    
+    freeSet(s);
+
     freeAtom(atom);
     freeAtom(atom1);
     freeAtom(atom2);
     return 0;
+}
+*/
+
+int main(void)
+{
+    return EXIT_SUCCESS;
 }
