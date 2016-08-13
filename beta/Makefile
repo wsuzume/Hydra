@@ -5,10 +5,12 @@ HEADER = type.h object.h
 
 all: hydmaster.so hydkernel.so
 
-hydmaster.so: master.h master.c object.c $(HEADER)
+hydmaster.so: master.h master.c object.c type.c typesys.c $(HEADER)
+	$(CC) $(CFLAGS) -fPIC -c type.c -o type.lo
+	$(CC) $(CFLAGS) -fPIC -c typesys.c -o typesys.lo
 	$(CC) $(CFLAGS) -fPIC -c object.c -o object.lo
 	$(CC) $(CFLAGS) -fPIC -c master.c -o hydmaster.lo
-	$(CC) $(CFLAGS) -shared -Wl,-soname,hydmaster.so -o hydmaster.so hydmaster.lo object.lo
+	$(CC) $(CFLAGS) -shared -Wl,-soname,hydmaster.so -o hydmaster.so hydmaster.lo type.lo typesys.lo object.lo
 
 hydkernel.so: kernel.h kernel.c 
 	$(CC) $(CFLAGS) -fPIC -c kernel.c -o hydkernel.lo

@@ -11,7 +11,7 @@ ByteString allocByteString(size_t n)
 
     ret->size = n;
     ret->data = (char *)malloc((n+1) * sizeof(char));
-    ret->data[n] = '\0';
+    ret->data[n] = '\n';
 
     return ret;
 }
@@ -81,13 +81,24 @@ ByteString byteStringFromFile(const char *filename)
     size_t n = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
 
-    ByteString ret = allocByteString(n-1);
-    size_t size = fread(ret->data, 1, n-1, fp);
+    ByteString ret = allocByteString(n);
+    size_t size = fread(ret->data, 1, n, fp);
     if (size == 0) {
         free(ret->data);
         free(ret);
         ret = NULL;
     }
+
+    puts("byteSringFromFile() test:");
+    printf("n = %ld\n", n);
+    printf("size = %ld\n", size);
+    printf("last char = %d\n", ret->data[size+1]);
+    printf("last char = %d\n", ret->data[size]);
+    printf("last char = %d\n", ret->data[size-1]);
+    printf("last char = %d\n", ret->data[size-2]);
+    printf("last char = %d\n", ret->data[size-3]);
+    printf("last char = %c\n", ret->data[size-2]);
+    printf("last char = %c\n", ret->data[size-3]);
 
     fclose(fp);
     return ret;
@@ -167,7 +178,7 @@ List makeByteStringList(int n, char *str[])
     List xs = makeList(makeSimpleType(BYTESTRING));
     int i;
     for (i = n-1; i >= 0; i--) {
-        //puts(str[i]);
+        puts(str[i]);
         cons(makeByteString(str[i]), xs);
     }
     return xs;

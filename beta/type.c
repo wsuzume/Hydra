@@ -12,11 +12,13 @@ size_t HYDRA_TYPE_SIZE[INVALID] = {
     sizeof(Float),
     sizeof(Double),
 
-    sizeof(Type),
 
     sizeof(ByteString),
     sizeof(Object),
-    sizeof(Array),
+    sizeof(List),
+    0, // sizeof(Array),
+    
+    sizeof(Type),
 };
 
 size_t sizeof_type(Type t)
@@ -26,7 +28,7 @@ size_t sizeof_type(Type t)
     }
     return 0;
 }
-
+/*
 size_t HYDRA_TYPE_ALIGN[INVALID] = {
     0,
     0,
@@ -50,7 +52,7 @@ size_t alignof_type(Type t)
     }
     return 0;
 }
-
+*/
 void show(Type t, void *p)
 {
     return;
@@ -61,24 +63,25 @@ typedef void (*PrintFun)(void *);
 
 void printUndefined(void *a) { fputs("Undefined", stdout); }
 void printVoid(void *a) { fputs("Void", stdout); }
-void printInt(void *a) { printf("%d", *((Int *)a)); }
-void printNat(void *a) { printf("%d", *((Nat *)a)); }
+void printNat(void *a) { printf("%ld", *((Nat *)a)); }
+void printInt(void *a) { printf("%ld", *((Int *)a)); }
 void printFloat(void *a) { printf("%f", *((Float *)a)); }
 void printDouble(void *a) { printf("%lf", *((Double *)a)); }
-void printType_X(void *a) { printType((Type)a); }
 void printByteString_X(void *a) { printByteString((ByteString)a); }
 void printList_X(void *a) { printList((List)a); }
+void printType_X(void *a) { printType((Type)a); }
 
 PrintFun printFun[INVALID] = {
     printUndefined,
     printVoid,
-    printInt,
     printNat,
+    printInt,
     printFloat,
     printDouble,
-    printType_X,
     printByteString_X,
-    printList_X
+    NULL,
+    printList_X,
+    printType_X,
 };
 
 void print(Type t, void *a)

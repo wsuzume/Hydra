@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "type.h"
 
 #define TCNUM_SHOW 1
@@ -8,6 +9,13 @@ Type makeType(type_t *type, size_t n)
 {
     Type ret = (Type)malloc(sizeof(type_t) * n);
     memcpy(ret, type, sizeof(type_t) * n);
+    return ret;
+}
+
+Type makeSimpleType(type_t type)
+{
+    Type ret = (Type)malloc(sizeof(type_t));
+    ret[0] = type;
     return ret;
 }
 

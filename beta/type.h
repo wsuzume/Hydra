@@ -72,6 +72,7 @@ enum TYPENUM {
 
     BYTESTRING,
     OBJECT,
+    LIST,
     ARRAY,
 
     TYPE,
@@ -80,7 +81,6 @@ enum TYPENUM {
     FUNCTION,
     FUNCTION_END,
     PAIR,
-    LIST,
     TOKEN,
     INVALID,
 };
@@ -123,6 +123,8 @@ struct atom_t {
 };
 
 
+Type makeType(type_t *type, size_t n);
+Type makeSimpleType(type_t type);
 type_t getTopLevelType(Type t);
 Type printType(Type t);
 
