@@ -3,6 +3,7 @@
 
 #include "type.h"
 #include "object.h"
+#include "lex.h"
 #include "master.h"
 
 void compile()
@@ -16,7 +17,11 @@ void compile()
     }
 
     //printf("%ld", size);
-    printlnByteString(code);
+    //printlnByteString(code);
+
+    List xs = lex(code);
+    printTokenList(xs);
+    freeTokenList(xs);
 
     //int ret = hydra(argc, argv, code, size);
     freeByteString(code);

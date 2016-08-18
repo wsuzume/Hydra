@@ -6,13 +6,13 @@
 #include <stdlib.h>
 
 #include "type.h"
-#include "obj.h"
+#include "object.h"
 
 enum TOKENTYPE {
     //lexerによる解析時点でのタグ
     PROGRAM_HEAD,
     COMMA,
-    INDEX,
+    INDENT,
 
     LEXATOM,
     ROUND_BRA,
@@ -30,6 +30,7 @@ enum TOKENTYPE {
     BRACE_WITH_COMMA,
 
     LEXBYTESTRING,
+    LEXINTEGER,
 
     //parserによる解析時点でのタグ
     TAG_OBJLIST,          //(a b c)       #ObjList or #@(Type -> Type .. )
@@ -50,7 +51,9 @@ enum TOKENTYPE {
 
     TAG_VAR_BYTESTRING,
     TAG_CONST_BYTESTRING,
+    TAG_INVALID
 };
+
 
 typedef struct codegen_t* CodeGen;
 struct codegen_t {
@@ -63,7 +66,8 @@ typedef struct token_t* Token;
 struct token_t {
     ByteString atom;
     uint32_t type;
-    void *data;
+    void *data;     //you can use this member freely if type is not INDENT
+                    //free(data) is called automatically in freeToken()
     uint32_t L;     //line
     uint32_t C;     //column
 };
@@ -82,12 +86,16 @@ struct ast_t {
     AST leaf;
 };
 
+List lex(ByteString code);
+void printTokenList(List xs);
+void freeTokenList(List xs);
+
 /*
 int repl(int argc, char *argv[]);
 CodeGen compile(int argc, char *argv[]);
 
 
-TokenList toTokenList(ByteString code);
+List lex(ByteString code);
 void printTokenList(TokenList tokenlist);
 TokenList freeTokenList(TokenList tokenlist);
 AST toAST(TokenList tokenlist);

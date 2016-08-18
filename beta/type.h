@@ -82,6 +82,12 @@ enum TYPENUM {
     FUNCTION_END,
     PAIR,
     TOKEN,
+    NIL,
+    HID,
+    ATOM,
+    UNIT,
+    SET,
+    CDF,    //Common Data Foundation
     INVALID,
 };
 
@@ -114,7 +120,7 @@ struct object_t {
 
 typedef struct atom_t* Atom;
 struct atom_t {
-    Type type;
+    type_t type;
     union {
         Int id;
         hid_t hid;
@@ -122,6 +128,30 @@ struct atom_t {
     } data;
 };
 
+typedef struct entity_t* Entity;
+struct entity_t {
+    Atom atom;
+    Type type;
+    void *data;
+};
+
+typedef struct unit_t* Unit;
+struct unit_t {
+    Entity data;
+    Unit root;
+    Set leaf;
+};
+
+//Atomでつけられた名前から対象を検索する
+//Atomは多相型なので、Atomに属していれば検索に用いることができる
+typedef struct set_t* Set;
+struct set_t {
+    Type type;
+    void *root[ATOMTYPENUM];
+};
+
+
+typedef void* CDF;
 
 Type makeType(type_t *type, size_t n);
 Type makeSimpleType(type_t type);
