@@ -2,16 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include "type.h"
+#include "object.h"
 
 //(null文字除いて)n文字分の領域を確保する
 //sizeには格納できる文字数(n)が保存される
-//安全のため、末尾にはnull文字が付加される
+//安全のため、先頭と末尾にはnull文字が代入される
 ByteString allocByteString(size_t n)
 {
     ByteString ret = (ByteString)malloc(sizeof(struct bytestring_t));
 
     ret->size = n;
     ret->data = (char *)malloc((n+1) * sizeof(char));
+    ret->data[0] = '\0';
     ret->data[n] = '\0';
 
     return ret;
@@ -33,6 +35,20 @@ ByteString freeByteString(ByteString str)
     }
 
     return NULL;
+}
+
+int compByteString(ByteString str1, ByteString str2)
+{
+    char *s1 = str1->data;
+    char *s2 = str2->data;
+
+    while ((*s1 == *s2) && *s1) {
+        s1++;
+        s2++;
+    }
+
+    return (*s1 == *s2) ? 0 :
+           (*s1 < *s2)  ? 1 : -1;
 }
 
 void printByteString(ByteString str)
@@ -194,54 +210,6 @@ void freeByteStringList(List xs)
 
 //THERE
 
-
-static inline hid_t *makeLink(hid_t *w, hid_t x, hid_t y)
-{
-    w[0] = x;
-    w[1] = y;
-    return w;
-}
-
-static inline hid_t upsLink(hid_t *w)
-{
-    return w[0];
-}
-
-static inline hid_t dwsLink(hid_t *w)
-{
-    return w[1];
-}
-
-//大きいほうを返す。-1なら左のv, 1なら右のwが大きい。
-static inline int compLink(hid_t *v, hid_t *w)
-{
-    return (v[0] < w[0] ?  1 :
-           (v[0] > w[0] ? -1 :
-           (v[1] < w[1] ?  1 :
-           (v[1] > w[1] ? -1 : 0))));
-}
-
-static inline hid_t makeHID(int32_t x, int32_t y)
-{
-    return (((int64_t)x) << 32) | (int64_t)(y & 0xffffffff);
-}
-
-static inline int compHID(hid_t v, hid_t w)
-{
-    return (v < w ?  1 :
-           (v > w ? -1 : 0));
-}
-
-static inline hhid_t getxHID(hid_t hid)
-{
-    return (hhid_t)((hid >> 32) & 0xffffffff); 
-}
-
-static inline hhid_t getyHID(hid_t hid)
-{
-    return (hhid_t)(hid & 0xffffffff);
-}
-
 void printHID(hid_t hid)
 {
     hhid_t x = getxHID(hid);
@@ -289,6 +257,7 @@ hid_t view(hid_t v, hid_t hid)
     return hid;
 }
 
+
 Atom makeAtomHID(hid_t hid)
 {
     Atom ret = (Atom)malloc(sizeof(struct atom_t));
@@ -297,7 +266,7 @@ Atom makeAtomHID(hid_t hid)
     return ret;
 }
 
-Atom makeAtomByteString(char *p)
+Atom makeAtomByteString(const char *p)
 {
     Atom ret = (Atom)malloc(sizeof(struct atom_t));
     ret->type = BYTESTRING;

@@ -83,7 +83,9 @@ enum TYPENUM {
     PAIR,
     TOKEN,
     NIL,
+    DHID,
     HID,
+    HHID,
     ATOM,
     UNIT,
     SET,
@@ -111,13 +113,13 @@ struct bytestring_t {
     char *data;
 };
 
-struct object_t* Object;
+typedef struct object_t* Object;
 struct object_t {
     Type type;
     void *data;
 };
 
-
+#define ATOMTYPENUM 3
 typedef struct atom_t* Atom;
 struct atom_t {
     type_t type;
@@ -126,6 +128,14 @@ struct atom_t {
         hid_t hid;
         ByteString name;
     } data;
+};
+
+//Atomでつけられた名前から対象を検索する
+//Atomは多相型なので、Atomに属していれば検索に用いることができる
+typedef struct set_t* Set;
+struct set_t {
+    Type type;
+    void *root[ATOMTYPENUM];
 };
 
 typedef struct entity_t* Entity;
@@ -142,16 +152,7 @@ struct unit_t {
     Set leaf;
 };
 
-//Atomでつけられた名前から対象を検索する
-//Atomは多相型なので、Atomに属していれば検索に用いることができる
-typedef struct set_t* Set;
-struct set_t {
-    Type type;
-    void *root[ATOMTYPENUM];
-};
-
-
-typedef void* CDF;
+typedef void* CommonDataFoundation;
 
 Type makeType(type_t *type, size_t n);
 Type makeSimpleType(type_t type);
