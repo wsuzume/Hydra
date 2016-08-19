@@ -29,4 +29,5 @@
 *.app
 
 # Test codes
+test.*
 beta/test.*
