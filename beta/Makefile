@@ -16,3 +16,7 @@ hydmaster.so: master.h master.c object.c type.c typesys.c lex.c lex.h $(HEADER)
 hydkernel.so: kernel.h kernel.c 
 	$(CC) $(CFLAGS) -fPIC -c kernel.c -o hydkernel.lo
 	$(CC) $(CFLAGS) -shared -Wl,-soname,hydkernel.so hydkernel.lo -o hydkernel.so
+
+.PHONY: clean
+clean:
+	-rm *.lo
