@@ -152,7 +152,7 @@ struct unit_t {
     Set leaf;
 };
 
-typedef void* CommonDataFoundation;
+typedef void* DataPlate;
 
 Type makeType(type_t *type, size_t n);
 Type makeSimpleType(type_t type);

@@ -1,3 +1,3 @@
 #pragma once
 
-void vmmain();
+int vmmain(void **code, size_t n);

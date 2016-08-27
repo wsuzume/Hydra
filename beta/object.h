@@ -41,3 +41,9 @@ static inline hhid_t getyHID(hid_t hid) { return (hhid_t)(hid & 0xffffffff); }
 void printHID(hid_t hid);
 hid_t view(hid_t v, hid_t hid);
 
+
+Atom makeAtomHID(hid_t hid);
+Atom makeAtomByteString(const char *p);
+void printAtom(Atom atom);
+void freeAtom(Atom atom);
+int compAtom(Atom a1, Atom a2);

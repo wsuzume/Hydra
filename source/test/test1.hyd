@@ -1,0 +1,42 @@
+
+p0 = (fromIPAddr 198.000.000.000).port.service.portname
+p1 = new(x)
+p2 = new(x)
+p3 = new(x)
+p4 = new(x)
+
+
+[@global.main argc argvs]
+    init:
+        s = {p1, p2, p3, p4}
+        s.start = True
+
+    link:
+        connect [@p1@p2, @p2@p3, @p3@p4, @p4p1]
+
+    sync:
+
+    calc:
+
+    sync:
+
+    calc:
+
+    sync:
+
+[@global.core client]
+    init:
+        name = "hoge"
+    link:
+        Bridge port1 = @*@client
+        Bridge port2 = @client@*
+        connect [port1, port2]
+    sync:
+
+
+[@global.event[AccessFromClient] addr]
+    init:
+        HID p = new(x)
+        proc = transfer @global.core
+        @p.main = [proc (fromIPAddr addr)]
+        @p.start = True

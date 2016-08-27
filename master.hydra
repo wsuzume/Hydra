@@ -1,0 +1,12 @@
+module Master
+
+hydmaster = (callvm dlopen) "hydmaster.so"
+
+@master
+    [init] :: IO ()
+        @std = @inf:0
+        @std.cons = callvm cons
+        @std.head = callvm head
+
+[@master.compile atom] :: Atom -> Code
+    return hydmaster.compile

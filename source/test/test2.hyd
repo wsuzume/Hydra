@@ -1,0 +1,38 @@
+
+import Zodiac
+
+
+[@global.particleMove]
+    sync:
+        @*.x = sum (map (innerproduct @*.vector):read @global.calcs.vector)
+        @*.y = sum ...
+
+[@global.particleShow]
+    sync:
+        cast @global.window (@**.showPoint @*.x, @*.y)
+
+[@global.event[Timer] timerID]
+    switch (timerID):
+        case SYNCPULSE:
+            [@*.particleMove]
+        case SHOWPULSE:
+            [@*.particleShow]
+
+[@global.main argc argvs]
+    init:
+        particles = particleFromFile argvs[1]
+        ps[] = calFromParticles particles
+
+        forall p in ps :>
+            @global.calcs += p
+            p.share @global
+
+        timer1 = timer 5 SYNCPULSE
+        timer2 = timer 16 SHOWPULSE
+
+        @global.window = @Zodiac.createWindow 200 300 400 500
+
+    link:
+        setBroadCast @timer1 ps
+        setBroadCase @timer2 ps
+        nolimitCast ps
